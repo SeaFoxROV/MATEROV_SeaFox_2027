@@ -26,8 +26,10 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            # "send_coords = turtlebot_pkg.send_coords:main",
-            # "turtle_go_to_coords = turtlebot_pkg.turtle_go_to_coords:main",
+            "joystick_reader = pilot_pkg.control.a_joystick_reader:main",
+            "joystick_to_twist = pilot_pkg.control.b_joystick_to_twist:main",
+            "twist_to_pwm = pilot_pkg.control.c_twist_to_pwm:main",
+            "udp_publisher = pilot_pkg.communication.udp_publisher:main",
         ],
     },
 )
