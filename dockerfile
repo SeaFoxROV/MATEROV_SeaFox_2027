@@ -1,7 +1,3 @@
-# CREATE DOCKER IMAGE
-# docker build -t <image_name> --build-arg INSTALL_GAZEBO=true .
-# CREATE DOCKER CONTAINER
-# docker run -it --name <container_name> -v $PWD:/home/ros/ros2_ws -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY --network host <image_name>
 FROM osrf/ros:humble-desktop AS base
 ARG USERNAME=ros
 ARG USER_UID=1000
@@ -17,6 +13,9 @@ RUN groupadd --gid $USER_GID $USERNAME \
     ros-dev-tools \
     ros-humble-teleop-twist-keyboard \
     xterm \
+
+ && pip3 install --no-cache-dir pygame \
+
  && echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
  && chmod 0440 /etc/sudoers.d/$USERNAME \
  && rm -rf /var/lib/apt/lists/*
