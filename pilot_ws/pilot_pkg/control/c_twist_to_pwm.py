@@ -75,10 +75,11 @@ class TwistToPWM(Node):
 
         base = self.zero
 
-        self.pwm_setpoints[0] = self.clamp(base + z - roll, 1100, 1900)
-        self.pwm_setpoints[1] = base + x + y + yaw - pitch
+        # 2(derecho) y 5(izquierdo) enfrente 1(derecho) y 3(izquierdo) atras
+        self.pwm_setpoints[1] = self.clamp(base + z - roll, 1100, 1900)
+        self.pwm_setpoints[0] = base - x + y + yaw - pitch
         self.pwm_setpoints[2] = base + x - y + yaw + pitch
-        self.pwm_setpoints[3] = base + x - y - yaw - pitch
+        self.pwm_setpoints[3] = base - x - y - yaw - pitch
         self.pwm_setpoints[4] = self.clamp(base - z - roll, 1100, 1900)
         self.pwm_setpoints[5] = base + x + y - yaw + pitch
 

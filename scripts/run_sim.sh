@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 xhost +local:docker
 
-docker run -it --rm --name sim_container \
+sudo docker run -it --rm --name sim_container \
   -e DISPLAY=$DISPLAY \
   -e QT_X11_NO_MITSHM=1 \
   -e QT_QPA_PLATFORM=xcb \
