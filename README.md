@@ -1,6 +1,6 @@
 # Comandos útiles ROV
 
-Guía rápida de comandos para configurar la red, el contenedor Docker y ROS 2.
+Guía rápida de comandos para configurar la red, el contenedor Docker, ROS 2 y las cámaras.
 
 ## Configuración inicial (ejecutar una sola vez)
 
@@ -61,6 +61,21 @@ Muestra en tiempo real los mensajes que se publican en un tópico.
 
 ```bash
 ros2 topic echo <topico>
+```
+
+## Cámaras
+
+### Ejecutar old_cameras
+Entra a la carpeta `old_cameras` y ejecuta la ventana principal de la interfaz de cámaras.
+
+```bash
+python3 main_window.py
+```
+
+### Probar conectividad con las cámaras
+
+```bash
+ping <ip_camara>
 ```
 
 ## Red
