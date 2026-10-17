@@ -1,17 +1,18 @@
+
 from email.mime import message
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QHBoxLayout
 from PyQt5.QtCore import Qt
 
-from camera import CameraWidget
-# from components.model import ModelWidget
+from pilot_pkg.cameras.cameras_main import CameraWidget
+from pilot_pkg.cameras.model import ModelWidget
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Pilot GUI")
+        self.setWindowTitle("PyQt5 - División Vertical")
         self.setGeometry(100, 100, 800, 500)
         self.all_cameras = False
         self.selected_camera = None
@@ -23,7 +24,7 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(layout)
 
         self.left_widget = CameraWidget()
-        # self.right_widget = ModelWidget()
+        self.right_widget = ModelWidget()
 
         layout.addWidget(self.left_widget)
         # layout.addWidget(self.right_widget)
@@ -144,6 +145,13 @@ class MainWindow(QMainWindow):
                 adjuster = self.left_widget.get_selected_camera()
                 if adjuster:
                     adjuster.set_saturation(adjuster.saturation - 0.1)
+
+        elif event.text() == "E":   # E de "enviar deteccion"
+            if self.selected_camera:
+                for thread in self.left_widget.threads.values():
+                    thread.send_detection_snapshot(self.left_widget.selected_camera)
+
+
 
 
 def main():
