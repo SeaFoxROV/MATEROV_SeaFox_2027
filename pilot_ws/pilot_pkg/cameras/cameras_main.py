@@ -2,7 +2,6 @@ import sys
 import cv2
 import numpy as np
 import requests
-import os
 from PyQt5.QtWidgets import (
     QApplication,
     QFrame,
@@ -10,7 +9,6 @@ from PyQt5.QtWidgets import (
     QLabel,
     QWidget,
     QSizePolicy,
-    QGridLayout,
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QBuffer
 from PyQt5.QtGui import QImage, QPixmap
@@ -18,9 +16,7 @@ from PyQt5.QtGui import QImage, QPixmap
 # from lib.vision.crabDetection import CrabDetector
 # from components.websocket import WebSocket
 
-from pilot_pkg.cameras.cameras_quick_config import ImageAdjuster
-# cuando uses el websocket:
-# from pilot_pkg.cameras.websocket import WebSocket
+from cameras_quick_config import ImageAdjuster
 # TODO: Revisar como se va a comportar la camara con el resize en linux
 
 
@@ -109,10 +105,9 @@ class CameraWidget(QFrame):
         super().__init__()
 
         self.camera_configs = {
-            "Grippers": f"/home/whackamole/Downloads/inheat.jpeg",
-            "Front": f"/home/whackamole/Downloads/inheat.jpeg",
-            "Status": f"/home/whackamole/Downloads/inheat.jpeg",
-            "Back/Down": f"/home/whackamole/Downloads/inheat.jpeg",
+            # "main": "http://admin:admin@192.168.1.27:6688/snapshot/PROFILE_000",
+            "upper": "http://admin:admin@192.168.1.67:6688/snapshot/PROFILE_000",
+            "middle": "http://admin:admin@192.168.1.68:6688/snapshot/PROFILE_000",
         }
         self.titles = {}
         self.threads = {}
@@ -125,21 +120,9 @@ class CameraWidget(QFrame):
         for name, url in self.camera_configs.items():
             adjuster = ImageAdjuster()
 
-            image = QLabel()
-
             container = QWidget()
             camera_layout = QVBoxLayout()
-            camera_layout = QGridLayout()
             camera_layout.setContentsMargins(0, 0, 0, 0)
-            camera_layout.setSpacing(5)
-
-            if os.path.exists(url):
-                image.setPixmap(QPixmap(url))
-            else:
-                placeholder = QPixmap(640, 480)
-                placeholder.fill(Qt.GlobalColor.darkGray)
-                image.setPixmap(placeholder)
-
 
             title = QLabel(name.upper())
             title.setAlignment(Qt.AlignCenter)
@@ -148,7 +131,7 @@ class CameraWidget(QFrame):
             )
             self.titles[name] = title
 
-            image_label = QLabel("Connecting...")
+            image_label = QLabel("Conectando...")
             image_label.setAlignment(Qt.AlignCenter)
             image_label.setMinimumSize(1, 1)
             image_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -158,23 +141,11 @@ class CameraWidget(QFrame):
             self.labels[name] = image_label
 
             camera_layout.addWidget(title)
-            #camera_layout.addWidget(image_label)
-            camera_layout.addWidget(image)
+            camera_layout.addWidget(image_label)
             container.setLayout(camera_layout)
 
-
-            if name == "Gripper":
-                main_layout.addWidget(container, alignment=Qt.AlignRight | Qt.AlignTop) # <-----------------
-            elif name == "Status":
-                main_layout.addWidget(container, alignment=Qt.AlignRight | Qt.AlignBottom)
-            # elif name == "Front":
-            #     main_layout.addWidget(container, alignment=Qt.AlignLeft | Qt.AlignTop)
-            # elif name == "Back":
-            #     main_layout.addWidget(container, alignment=Qt.AlignLeft | Qt.AlignBottom)
-
+            main_layout.addWidget(container)
             self.camera_containers[name] = container
-            
-
 
             thread = VideoThread(name, url, adjuster)
             thread.change_pixmap_signal.connect(
@@ -184,7 +155,6 @@ class CameraWidget(QFrame):
             self.threads[name] = thread
 
         self.setLayout(main_layout)
-
 
     def set_image(self, q_img, label):
         pixmap = QPixmap.fromImage(q_img).scaled(
@@ -211,7 +181,9 @@ class CameraWidget(QFrame):
 
     def set_title_style(self, camera_name, style):
         for name in self.titles.keys():
-            self.titles[name].setStyleSheet("font-weight: bold; color: white; background-color: #333;")
+            self.titles[name].setStyleSheet(
+                "font-weight: bold; color: white; background-color: #333;"
+            )
         if camera_name in self.titles:
             self.titles[camera_name].setStyleSheet(style)
 
@@ -237,5 +209,5 @@ if __name__ == "__main__":
 
     window.setLayout(win_layout)
     window.setWindowTitle("SeaFox ROV - Multi-Camera System")
-    window.showFullScreen()
+    window.show()
     sys.exit(app.exec_())
