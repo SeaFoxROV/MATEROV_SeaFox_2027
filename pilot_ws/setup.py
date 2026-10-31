@@ -30,6 +30,7 @@ setup(
             "joystick_to_twist = pilot_pkg.control.b_joystick_to_twist:main",
             "twist_to_pwm = pilot_pkg.control.c_twist_to_pwm:main",
             "udp_publisher = pilot_pkg.communication.udp_publisher:main",
+            "pwm_to_udp = pilot_pkg.control.d_pwm_to_udp:main",
         ],
     },
 )

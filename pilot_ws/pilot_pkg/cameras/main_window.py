@@ -1,8 +1,12 @@
 
 from email.mime import message
 import sys
+import os
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+os.environ.setdefault("SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", "1")
+import pygame
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QHBoxLayout
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
 from cameras_main import CameraWidget
 # from components.model import ModelWidget
@@ -26,11 +30,38 @@ class MainWindow(QMainWindow):
         self.left_widget = CameraWidget()
         # self.right_widget = ModelWidget()
 
+        # Cambio de cámaras con el botón
+        pygame.init()
+        pygame.joystick.init()
+        self.joysticks = {}
+        for i in range(pygame.joystick.get_count()):
+            joy = pygame.joystick.Joystick(i)
+            self.joysticks[joy.get_instance_id()] = joy
+
+        self.joy_timer = QTimer(self)
+        self.joy_timer.timeout.connect(self.poll_gamepad)
+        self.joy_timer.start(20)
+
         layout.addWidget(self.left_widget)
         # layout.addWidget(self.right_widget)
 
         layout.setStretch(0, 1)
         layout.setStretch(1, 1)
+
+    def poll_gamepad(self):
+        for event in pygame.event.get():
+            if event.type == pygame.JOYDEVICEADDED:
+                joy = pygame.joystick.Joystick(event.device_index)
+                self.joysticks[joy.get_instance_id()] = joy
+            elif event.type == pygame.JOYDEVICEREMOVED:
+                self.joysticks.pop(event.instance_id, None)
+            elif event.type == pygame.JOYBUTTONDOWN and event.button == 3:  # Y
+                self.left_widget.swap_cameras("upper", "gripper")
+
+    def closeEvent(self, event):
+        for thread in self.left_widget.threads.values():
+            thread.stop()
+        event.accept()
 
     def keyPressEvent(self, event):
         # Camera selection
@@ -54,9 +85,9 @@ class MainWindow(QMainWindow):
             )
         elif event.text() == "3":
             if self.selected_camera == "3":
-                self.left_widget.maximize_camera("middle")
+                self.left_widget.maximize_camera("gripper")
             self.selected_camera = "3"
-            self.left_widget.select_camera("middle")
+            self.left_widget.select_camera("gripper")
             self.all_cameras = False
             self.left_widget.set_title_style(
                 "middle", "font-weight: bold; color: white; background-color: #2BCF47;"
