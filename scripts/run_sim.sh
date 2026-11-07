@@ -7,7 +7,7 @@ sudo docker run -it --rm --name sim_container \
   -e QT_QPA_PLATFORM=xcb \
   -e XDG_RUNTIME_DIR=/tmp/runtime-ros \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v "$PWD":/home/ros/ros2_ws \
+  -v "$(cd "$(dirname "$0")/.." && pwd)/gazebo_ws":/home/ros/ros2_ws \
   --device /dev/dri \
   --group-add video \
   --group-add "$(stat -c '%g' /dev/dri/renderD128)" \

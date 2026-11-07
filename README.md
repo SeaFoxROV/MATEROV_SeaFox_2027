@@ -63,6 +63,15 @@ Muestra en tiempo real los mensajes que se publican en un tópico.
 ros2 topic echo <topico>
 ```
 
+## Simulación
+
+### Abrir Gazebo
+Dentro del contenedor de simulación (`scripts/run_sim.sh`), abre el mundo de la piscina (Gazebo Fortress).
+
+```bash
+~/ros2_ws/launch_pool.sh
+```
+
 ## Cámaras
 
 ### Ejecutar old_cameras
