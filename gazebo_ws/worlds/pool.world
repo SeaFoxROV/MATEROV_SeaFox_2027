@@ -1,22 +1,83 @@
+<?xml version="1.0"?>
+<!--
+  Mundo de la piscina MATE ROV para Gazebo Fortress (ign-gazebo 6, ROS 2 Humble).
+  - Superficie del agua en z = 0, fondo de la piscina en z = -3.
+  - Flotabilidad graduada: agua (1000 kg/m3) por debajo de z = 0, aire (1 kg/m3) por encima.
+  Lanzar con:  ~/ros2_ws/launch_pool.sh
+-->
 <sdf version="1.9">
-<world name="mate_pool">
+  <world name="mate_pool">
 
-  <physics name="1ms" type="ode">
-    <max_step_size>0.001</max_step_size>
-    <real_time_factor>1.0</real_time_factor>
-  </physics>
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
 
-  <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
-  <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
-  <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <gravity>0 0 -9.81</gravity>
 
-  <plugin filename="gz-sim-buoyancy-system" name="gz::sim::systems::Buoyancy">
-    <uniform_fluid_density>1000</uniform_fluid_density>
-  </plugin>
+    <!-- ===== Sistemas base ===== -->
+    <plugin filename="ignition-gazebo-physics-system"
+            name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system"
+            name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-user-commands-system"
+            name="ignition::gazebo::systems::UserCommands"/>
+    <!-- Necesario para sensores renderizados (cámaras del ROV más adelante) -->
+    <plugin filename="ignition-gazebo-sensors-system"
+            name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
 
-  <include>
-    <uri>model://sun</uri>
-  </include>
+    <!-- ===== Física del agua: flotabilidad =====
+         Si tu versión de Fortress no reconoce <graded_buoyancy>, sustitúyelo por:
+           <uniform_fluid_density>1000</uniform_fluid_density>
+         (en ese caso todo el mundo se trata como agua, incluso por encima de z = 0). -->
+    <plugin filename="ignition-gazebo-buoyancy-system"
+            name="ignition::gazebo::systems::Buoyancy">
+      <graded_buoyancy>
+        <default_density>1000</default_density>
+        <density_change>
+          <above_depth>0</above_depth>
+          <density>1</density>
+        </density_change>
+      </graded_buoyancy>
+    </plugin>
 
-</world>
+    <!-- ===== Escena y luz ===== -->
+    <scene>
+      <ambient>0.4 0.5 0.6 1</ambient>
+      <background>0.6 0.75 0.9 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.4 0.2 -0.9</direction>
+    </light>
+
+    <!-- ===== Modelos ===== -->
+    <include>
+      <uri>model://pool</uri>
+      <name>pool</name>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+    <!-- Más ligera que el agua: sube y queda flotando en la superficie -->
+    <include>
+      <uri>model://test_ball</uri>
+      <name>test_ball</name>
+      <pose>0 0 -1.5 0 0 0</pose>
+    </include>
+
+    <!-- Más densa que el agua: se hunde hasta el fondo -->
+    <include>
+      <uri>model://test_ball_heavy</uri>
+      <name>test_ball_heavy</name>
+      <pose>1 0 -0.5 0 0 0</pose>
+    </include>
+
+  </world>
 </sdf>

@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="test_ball_heavy">
+    <link name="ball_link">
+      <inertial>
+        <mass>6.0</mass>
+        <inertia>
+          <ixx>0.024</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>0.024</iyy><iyz>0</iyz>
+          <izz>0.024</izz>
+        </inertia>
+      </inertial>
+
+      <!-- El plugin de flotabilidad calcula el volumen a partir de esta colisión -->
+      <collision name="collision">
+        <geometry><sphere><radius>0.1</radius></sphere></geometry>
+      </collision>
+
+      <visual name="visual">
+        <geometry><sphere><radius>0.1</radius></sphere></geometry>
+        <material>
+          <ambient>0.85 0.1 0.1 1</ambient>
+          <diffuse>0.85 0.1 0.1 1</diffuse>
+          <specular>0.3 0.3 0.3 1</specular>
+        </material>
+      </visual>
+    </link>
+
+    <!-- ===== Hidrodinámica (modelo de Fossen) =====
+         Coeficientes negativos = fuerzas que se oponen al movimiento.
+         Lineales:     xU, yV, zW (traslación)  kP, mQ, nR (rotación)
+         Cuadráticos:  xUabsU ... ≈ -0.5 * rho * Cd * A  (Cd esfera ≈ 0.47, A = pi r^2 ≈ 0.0314 m2)
+         Masa añadida (xDotU ...): en 0; en Fortress puede volverse inestable con cuerpos ligeros.
+         Este mismo bloque sirve de plantilla para el ROV (ajustando link_name y coeficientes). -->
+    <plugin filename="ignition-gazebo-hydrodynamics-system"
+            name="ignition::gazebo::systems::Hydrodynamics">
+      <link_name>ball_link</link_name>
+      <xDotU>0</xDotU>
+      <yDotV>0</yDotV>
+      <zDotW>0</zDotW>
+      <kDotP>0</kDotP>
+      <mDotQ>0</mDotQ>
+      <nDotR>0</nDotR>
+      <xUabsU>-7.4</xUabsU>
+      <xU>-2.0</xU>
+      <yVabsV>-7.4</yVabsV>
+      <yV>-2.0</yV>
+      <zWabsW>-7.4</zWabsW>
+      <zW>-2.0</zW>
+      <kPabsP>-0.01</kPabsP>
+      <kP>-0.01</kP>
+      <mQabsQ>-0.01</mQabsQ>
+      <mQ>-0.01</mQ>
+      <nRabsR>-0.01</nRabsR>
+      <nR>-0.01</nR>
+    </plugin>
+  </model>
+</sdf>

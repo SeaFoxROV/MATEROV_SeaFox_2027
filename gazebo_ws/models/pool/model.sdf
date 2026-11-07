@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="pool">
+    <static>true</static>
+
+    <link name="pool_link">
+
+      <!-- Fondo -->
+      <collision name="floor_collision">
+        <pose>0 0 -3.1 0 0 0</pose>
+        <geometry><box><size>10.4 6.4 0.2</size></box></geometry>
+      </collision>
+      <visual name="floor_visual">
+        <pose>0 0 -3.1 0 0 0</pose>
+        <geometry><box><size>10.4 6.4 0.2</size></box></geometry>
+        <material>
+          <ambient>0.75 0.8 0.85 1</ambient>
+          <diffuse>0.75 0.8 0.85 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Pared norte (+Y) -->
+      <collision name="wall_north_collision">
+        <pose>0 3.1 -1.35 0 0 0</pose>
+        <geometry><box><size>10.4 0.2 3.3</size></box></geometry>
+      </collision>
+      <visual name="wall_north_visual">
+        <pose>0 3.1 -1.35 0 0 0</pose>
+        <geometry><box><size>10.4 0.2 3.3</size></box></geometry>
+        <material>
+          <ambient>0.85 0.88 0.9 1</ambient>
+          <diffuse>0.85 0.88 0.9 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Pared sur (-Y) -->
+      <collision name="wall_south_collision">
+        <pose>0 -3.1 -1.35 0 0 0</pose>
+        <geometry><box><size>10.4 0.2 3.3</size></box></geometry>
+      </collision>
+      <visual name="wall_south_visual">
+        <pose>0 -3.1 -1.35 0 0 0</pose>
+        <geometry><box><size>10.4 0.2 3.3</size></box></geometry>
+        <material>
+          <ambient>0.85 0.88 0.9 1</ambient>
+          <diffuse>0.85 0.88 0.9 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Pared este (+X) -->
+      <collision name="wall_east_collision">
+        <pose>5.1 0 -1.35 0 0 0</pose>
+        <geometry><box><size>0.2 6.0 3.3</size></box></geometry>
+      </collision>
+      <visual name="wall_east_visual">
+        <pose>5.1 0 -1.35 0 0 0</pose>
+        <geometry><box><size>0.2 6.0 3.3</size></box></geometry>
+        <material>
+          <ambient>0.85 0.88 0.9 1</ambient>
+          <diffuse>0.85 0.88 0.9 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Pared oeste (-X) -->
+      <collision name="wall_west_collision">
+        <pose>-5.1 0 -1.35 0 0 0</pose>
+        <geometry><box><size>0.2 6.0 3.3</size></box></geometry>
+      </collision>
+      <visual name="wall_west_visual">
+        <pose>-5.1 0 -1.35 0 0 0</pose>
+        <geometry><box><size>0.2 6.0 3.3</size></box></geometry>
+        <material>
+          <ambient>0.85 0.88 0.9 1</ambient>
+          <diffuse>0.85 0.88 0.9 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Agua (solo visual, semitransparente) -->
+      <visual name="water_visual">
+        <pose>0 0 -1.5 0 0 0</pose>
+        <cast_shadows>false</cast_shadows>
+        <transparency>0.6</transparency>
+        <geometry><box><size>10.0 6.0 3.0</size></box></geometry>
+        <material>
+          <ambient>0.0 0.35 0.7 1</ambient>
+          <diffuse>0.0 0.45 0.8 1</diffuse>
+          <specular>0.3 0.3 0.3 1</specular>
+        </material>
+      </visual>
+
+    </link>
+  </model>
+</sdf>
