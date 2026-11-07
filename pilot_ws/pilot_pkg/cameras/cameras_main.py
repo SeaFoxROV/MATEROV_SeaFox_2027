@@ -118,9 +118,9 @@ class CameraWidget(QFrame):
             }
         else:
             self.camera_configs = {
-                "main": "http://admin:admin@192.168.1.27:6688/snapshot/PROFILE_000",
+                "main": "http://admin:admin@192.168.1.68:6688/snapshot/PROFILE_000",
                 "upper": "http://admin:admin@192.168.1.67:6688/snapshot/PROFILE_000",
-                "gripper": "http://admin:admin@192.168.1.68:6688/snapshot/PROFILE_000",
+                "gripper": "http://admin:admin@192.168.1.27:6688/snapshot/PROFILE_000",
             }
         self.grid_pos = {"main": (0, 0), "upper": (0, 1), "gripper": (1, 0)}
         self.titles = {}
