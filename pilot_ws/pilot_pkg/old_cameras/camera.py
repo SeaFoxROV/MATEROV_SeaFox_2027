@@ -16,7 +16,8 @@ from PyQt5.QtGui import QImage, QPixmap
 # from lib.vision.crabDetection import CrabDetector
 # from components.websocket import WebSocket
 
-from camera_quick_config import ImageAdjuster
+from cameras_quick_config import ImageAdjuster
+
 # TODO: Revisar como se va a comportar la camara con el resize en linux
 
 
@@ -155,6 +156,30 @@ class CameraWidget(QFrame):
             self.threads[name] = thread
 
         self.setLayout(main_layout)
+
+    def log(self, message):
+        self.status_box.appendPlainText(message)
+
+    def swap_cameras(self, a="upper", b="gripper"):
+        ta, tb = self.threads[a], self.threads[b]
+        ta.url, tb.url = tb.url, ta.url
+        ta.adjuster, tb.adjuster = tb.adjuster, ta.adjuster
+
+        title_a, title_b = self.titles[a].text(), self.titles[b].text()
+        self.titles[a].setText(title_b)
+        self.titles[b].setText(title_a)
+
+    def read_pwm(self):
+        while self.pwm_socket.hasPendingDatagrams():
+            data, _, _ = self.pwm_socket.readDatagram(
+                self.pwm_socket.pendingDatagramSize()
+            )
+            try:
+                values = json.loads(bytes(data).decode())
+            except ValueError:
+                continue
+            lines = [f"M{i + 1}: {v}" for i, v in enumerate(values)]
+            self.status_box.setPlainText("PWM\n" + "\n".join(lines))
 
     def set_image(self, q_img, label):
         pixmap = QPixmap.fromImage(q_img).scaled(
