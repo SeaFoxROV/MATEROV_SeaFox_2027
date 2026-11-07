@@ -6,19 +6,24 @@ from PyQt5.QtWidgets import (
     QApplication,
     QFrame,
     QVBoxLayout,
+    QGridLayout,
     QLabel,
     QWidget,
     QSizePolicy,
+    QPlainTextEdit,
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QBuffer
 from PyQt5.QtGui import QImage, QPixmap
 
+# Para mostrar el pwm en el status
+import json
+from PyQt5.QtNetwork import QUdpSocket, QHostAddress
 # from lib.vision.crabDetection import CrabDetector
 # from components.websocket import WebSocket
 
 from cameras_quick_config import ImageAdjuster
-
 # TODO: Revisar como se va a comportar la camara con el resize en linux
+import os
 
 
 class VideoThread(QThread):
@@ -105,18 +110,26 @@ class CameraWidget(QFrame):
     def __init__(self):
         super().__init__()
 
-        self.camera_configs = {
-            # "main": "http://admin:admin@192.168.1.27:6688/snapshot/PROFILE_000",
-            "upper": "http://admin:admin@192.168.1.67:6688/snapshot/PROFILE_000",
-            "middle": "http://admin:admin@192.168.1.68:6688/snapshot/PROFILE_000",
-        }
+        if os.environ.get("FAKE_CAMERAS"):
+            self.camera_configs = {
+                "main": "http://admin:admin@127.0.0.1:8001/snapshot/PROFILE_000",
+                "upper": "http://admin:admin@127.0.0.1:8002/snapshot/PROFILE_000",
+                "gripper": "http://admin:admin@127.0.0.1:8003/snapshot/PROFILE_000",
+            }
+        else:
+            self.camera_configs = {
+                "main": "http://admin:admin@192.168.1.68:6688/snapshot/PROFILE_000",
+                "upper": "http://admin:admin@192.168.1.67:6688/snapshot/PROFILE_000",
+                "gripper": "http://admin:admin@192.168.1.27:6688/snapshot/PROFILE_000",
+            }
+        self.grid_pos = {"main": (0, 0), "upper": (0, 1), "gripper": (1, 0)}
         self.titles = {}
         self.threads = {}
         self.labels = {}
         self.camera_containers = {}
         self.selected_camera = None
         self.setFrameShape(QFrame.StyledPanel)
-        main_layout = QVBoxLayout()
+        main_layout = QGridLayout()
 
         for name, url in self.camera_configs.items():
             adjuster = ImageAdjuster()
@@ -127,25 +140,27 @@ class CameraWidget(QFrame):
 
             title = QLabel(name.upper())
             title.setAlignment(Qt.AlignCenter)
+            title.setFixedHeight(22)
             title.setStyleSheet(
-                "font-weight: bold; color: white; background-color: #333;"
+                "font-weight: bold; color: #000000; background-color: #FFD700;"
             )
             self.titles[name] = title
 
             image_label = QLabel("Conectando...")
             image_label.setAlignment(Qt.AlignCenter)
             image_label.setMinimumSize(1, 1)
-            image_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            image_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
             image_label.setStyleSheet(
-                "background-color: black; border: 1px solid gray;"
+                "background-color: black; border: 1px solid #1E90FF;"
             )
             self.labels[name] = image_label
 
-            camera_layout.addWidget(title)
-            camera_layout.addWidget(image_label)
+            camera_layout.addWidget(title, 0)
+            camera_layout.addWidget(image_label, 1)
             container.setLayout(camera_layout)
 
-            main_layout.addWidget(container)
+            row, col = self.grid_pos[name]
+            main_layout.addWidget(container, row, col)
             self.camera_containers[name] = container
 
             thread = VideoThread(name, url, adjuster)
@@ -155,11 +170,30 @@ class CameraWidget(QFrame):
             thread.start()
             self.threads[name] = thread
 
-        self.setLayout(main_layout)
+        # Terminal de status (abajo a la derecha), FUERA del for
+        self.status_box = QPlainTextEdit()
+        self.status_box.setReadOnly(True)
+        self.status_box.setMaximumBlockCount(500)
+        self.status_box.setStyleSheet(
+            "background-color: black; color: #1E90FF; "
+            "font-family: monospace; font-size: 20px; border: 4px solid #FFFF00;"
+        )
+        main_layout.addWidget(self.status_box, 1, 1)
+        self.pwm_socket = QUdpSocket(self)
+        self.pwm_socket.bind(QHostAddress.Any, 5005)
+        self.pwm_socket.readyRead.connect(self.read_pwm)
 
+        # Columna izquierda ancha, derecha angosta; fila de abajo más alta
+        main_layout.setColumnStretch(0, 3)
+        main_layout.setColumnStretch(1, 1)
+        main_layout.setRowStretch(0, 1)
+        main_layout.setRowStretch(1, 1)
+
+        self.setLayout(main_layout)
+    
     def log(self, message):
         self.status_box.appendPlainText(message)
-
+    
     def swap_cameras(self, a="upper", b="gripper"):
         ta, tb = self.threads[a], self.threads[b]
         ta.url, tb.url = tb.url, ta.url
@@ -207,7 +241,7 @@ class CameraWidget(QFrame):
     def set_title_style(self, camera_name, style):
         for name in self.titles.keys():
             self.titles[name].setStyleSheet(
-                "font-weight: bold; color: white; background-color: #333;"
+                "font-weight: bold; color: #000000; background-color: #FFD700;"
             )
         if camera_name in self.titles:
             self.titles[camera_name].setStyleSheet(style)

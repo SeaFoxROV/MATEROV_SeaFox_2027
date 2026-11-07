@@ -29,5 +29,11 @@ def generate_launch_description():
                 name="udp_publisher",
                 output="screen",
             ),
+            Node(
+                package="pilot_pkg",
+                executable="pwm_to_udp",
+                name="pwm_to_udp",
+                output="screen",
+            ),
         ]
     )
