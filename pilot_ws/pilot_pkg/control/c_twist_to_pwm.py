@@ -73,31 +73,35 @@ class TwistToPWM(Node):
         pitch = self.normalize(msg.angular.y)
         yaw = self.normalize(msg.angular.z)
 
-        base = self.zero
+        base = self.zero#Deste aqui cambie alv todo
 
-        # 2(derecho) y 5(izquierdo) enfrente 1(derecho) y 3(izquierdo) atras
+        # Verticales (1 y 4)
         self.pwm_setpoints[1] = self.clamp(base + z - roll, 1100, 1900)
-        self.pwm_setpoints[0] = base - x + y + yaw - pitch
-        self.pwm_setpoints[2] = base + x - y + yaw + pitch
-        self.pwm_setpoints[3] = base - x - y - yaw - pitch
         self.pwm_setpoints[4] = self.clamp(base - z - roll, 1100, 1900)
-        self.pwm_setpoints[5] = base + x + y - yaw + pitch
 
+        # Horizontales (0, 2, 3, 5): se calcula solo el desplazamiento respecto a base
+        offsets = {
+            0: -x + y + yaw - pitch,
+            2: x - y + yaw + pitch,
+            3: -x - y - yaw - pitch,
+            5: x + y - yaw + pitch,
+        }
+
+        # Si alguno se pasa del rango, se escala todo en la misma proporción
+        limit = min(base - 1200, 1800 - base)
+        max_off = max(abs(v) for v in offsets.values())
+        if max_off > limit:
+            k = limit / max_off
+            offsets = {i: v * k for i, v in offsets.items()}
+
+        for i, off in offsets.items():
+            self.pwm_setpoints[i] = int(base + off)
+
+        # Zona muerta
         for i in range(6):
-            if i == 0 or i == 4:
-                if self.pwm_setpoints[i] > (
-                    self.zero - self.deadzone
-                ) and self.pwm_setpoints[i] < (self.zero + self.deadzone):
-                    self.pwm_setpoints[i] = self.zero
-                    self.pwm_setpoints[i] = self.clamp(self.pwm_setpoints[i])
-                self.pwm_setpoints[1] = self.clamp(self.pwm_setpoints[1], 1100, 1900)
-                self.pwm_setpoints[4] = self.clamp(self.pwm_setpoints[4], 1100, 1900)
-            else:
-                self.pwm_setpoints[i] = self.clamp(self.pwm_setpoints[i])
-                if self.pwm_setpoints[i] > (
-                    self.zero - self.deadzone
-                ) and self.pwm_setpoints[i] < (self.zero + self.deadzone):
-                    self.pwm_setpoints[i] = self.zero
+            if abs(self.pwm_setpoints[i] - base) < self.deadzone:
+                self.pwm_setpoints[i] = base
+        #Hasta aca alv
 
     # ---------------- OUTPUT ----------------
     def pwm_callback(self):
