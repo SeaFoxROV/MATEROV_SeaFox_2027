@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import Int32  # NUEVO
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 pygame.init()
 
@@ -12,10 +13,12 @@ class JoystickPublisher(Node):
     def __init__(self):
         super().__init__("joystick_publisher")
         self.publisher_ = self.create_publisher(Float32MultiArray, "joystick_data", 10)
-        self.zero_publisher_ = self.create_publisher(Int32, "zero_value", 10)  # NUEVO
+        zero_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.zero_publisher_ = self.create_publisher(Int32, "zero_value", zero_qos)
         self.zero = 1570  # NUEVO — contador inicializado en 1500
         self.prev_select = 0  # NUEVO — estado anterior del botón SELECT (índice 6)
         self.prev_back = 0  # NUEVO — estado anterior del botón BACK   (índice 7)
+        self._publish_zero()  # sincroniza el zero inicial con twist_to_pwm
         self.joysticks = {}
         pygame.joystick.init()
         self.init_joysticks()

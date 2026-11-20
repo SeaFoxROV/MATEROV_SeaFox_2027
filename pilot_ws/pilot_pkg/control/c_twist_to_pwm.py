@@ -3,6 +3,7 @@ from rclpy.node import Node
 
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32MultiArray, Int16MultiArray, Int32  # NUEVO: Int32
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 
 class TwistToPWM(Node):
@@ -22,7 +23,9 @@ class TwistToPWM(Node):
         self.create_subscription(
             Float32MultiArray, "/joystick_data", self.gripper_callback, 10
         )
-        self.create_subscription(Int32, "zero_value", self.zero_callback, 10)  # NUEVO
+        # TRANSIENT_LOCAL: recibe el ultimo zero publicado aunque este nodo arranque despues
+        zero_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.create_subscription(Int32, "zero_value", self.zero_callback, zero_qos)
 
         self.pwm_pub = self.create_publisher(Int16MultiArray, "pwm_values", 10)
 
@@ -70,7 +73,6 @@ class TwistToPWM(Node):
         z = -self.normalize(msg.linear.z)
 
         roll = self.normalize(msg.angular.x)
-        pitch = self.normalize(msg.angular.y)
         yaw = self.normalize(msg.angular.z)
 
         base = self.zero#Deste aqui cambie alv todo
@@ -81,10 +83,12 @@ class TwistToPWM(Node):
 
         # Horizontales (0, 2, 3, 5): se calcula solo el desplazamiento respecto a base
         offsets = {
-            0: -x + y + yaw - pitch,
-            2: x - y + yaw + pitch,
-            3: -x - y - yaw - pitch,
-            5: x + y - yaw + pitch,
+            # pitch NO se mezcla aqui: en los horizontales tendria el mismo
+            # patron de signos que x (seria traslacion, no rotacion)
+            0: -x + y + yaw,
+            2: x - y + yaw,
+            3: -x - y - yaw,
+            5: x + y - yaw,
         }
 
         # Si alguno se pasa del rango, se escala todo en la misma proporción

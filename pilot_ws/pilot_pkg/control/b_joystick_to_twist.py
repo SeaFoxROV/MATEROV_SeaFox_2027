@@ -5,6 +5,11 @@ from sensor_msgs.msg import Joy
 from std_msgs.msg import Float32MultiArray, Bool
 
 
+AXIS_DEADZONE = 0.08
+
+def _dz(v, dz=AXIS_DEADZONE):
+    return 0.0 if abs(v) < dz else v
+
 class MotionController(Node):
     def __init__(self):
         super().__init__("motion_controller_node")
@@ -44,12 +49,12 @@ class MotionController(Node):
 
         # [leftx,lefty,lefttrigger,rightx,righty,rightrigger,A,B,X,Y,LT,RT,BACK,SELECT,crossx,crossy]
         # Map joystick axes to velocity command
-        left_joy_x = msg.data[0]  # Sides
-        left_joy_y = msg.data[1]  # Forward/Back
+        left_joy_x = _dz(msg.data[0])  # Sides
+        left_joy_y = _dz(msg.data[1])  # Forward/Back
         left_trigger = msg.data[2]  # doiwn
         right_trigger = msg.data[5]  # jup   Z
-        right_joy_x = msg.data[3]
-        right_joy_y = msg.data[4]
+        right_joy_x = _dz(msg.data[3])
+        right_joy_y = _dz(msg.data[4])
         cross_x = msg.data[14]
 
         self.last_user_velocity_command.linear.x = -left_joy_y
