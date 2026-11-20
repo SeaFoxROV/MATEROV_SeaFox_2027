@@ -9,6 +9,8 @@ from rclpy.qos import QoSProfile, DurabilityPolicy
 class TwistToPWM(Node):
     STEP = 500
     deadzone = 40
+    
+    YAW_GAIN = 0.6
 
     def __init__(self):
         super().__init__("twist_to_pwm")
@@ -68,14 +70,20 @@ class TwistToPWM(Node):
     # ---------------- MIXING ----------------
     def setpoint_callback(self, msg: Twist):
 
-        x = -self.normalize(msg.linear.x)
-        y = self.normalize(-msg.linear.y)
+        base = self.zero
+
+        # Rango util de los horizontales alrededor del neutro (230 con zero=1570).
+        # max(0, ...) evita invertir los thrusters si zero se sale de 1200-1800.
+        limit = max(0, min(base - 1200, 1800 - base))
+
+        # Horizontales escalados al limite real: 100% del stick = 100% del empuje
+        x = -self.normalize(msg.linear.x, limit)
+        y = self.normalize(-msg.linear.y, limit)
+        yaw = self.normalize(msg.angular.z, limit * self.YAW_GAIN)
+
+        # Verticales: sin cambios
         z = -self.normalize(msg.linear.z)
-
         roll = self.normalize(msg.angular.x)
-        yaw = self.normalize(msg.angular.z)
-
-        base = self.zero#Deste aqui cambie alv todo
 
         # Verticales (1 y 4)
         self.pwm_setpoints[1] = self.clamp(base + z - roll, 1100, 1900)
@@ -92,7 +100,6 @@ class TwistToPWM(Node):
         }
 
         # Si alguno se pasa del rango, se escala todo en la misma proporción
-        limit = min(base - 1200, 1800 - base)
         max_off = max(abs(v) for v in offsets.values())
         if max_off > limit:
             k = limit / max_off
@@ -105,7 +112,6 @@ class TwistToPWM(Node):
         for i in range(6):
             if abs(self.pwm_setpoints[i] - base) < self.deadzone:
                 self.pwm_setpoints[i] = base
-        #Hasta aca alv
 
     # ---------------- OUTPUT ----------------
     def pwm_callback(self):
