@@ -1,0 +1,205 @@
+<?xml version="1.0"?>
+<!--
+  ROV SeaFox para Gazebo Fortress (ign-gazebo 6).
+
+  Frame del modelo (base_link): X = adelante, Y = izquierda, Z = arriba, origen = centro
+  del bounding box del mesh.
+
+  Mesh: meshes/seafox_rov.stl (ya en metros, Z arriba). En el STL el frente es +Y, por eso
+  el visual va rotado yaw = -90°. Si en Gazebo ves que el frente real es el otro lado,
+  cambia el yaw del visual a +1.5708 y refleja X/Y de los thrusters.
+
+  Flotabilidad: el plugin Buoyancy del mundo usa el volumen de las COLISIONES, no del mesh.
+    masa total   = 11.0 (base) + 6 x 0.05 (hélices) = 11.3 kg
+    volumen      = caja 0.46 x 0.42 x 0.06 (0.011592 m3) + 4 esferas r=0.02 (0.000134 m3)
+                 = 0.011726 m3  ->  11.73 kg de agua desplazada
+    => flotabilidad ligeramente positiva (~ +4 N). Para ajustarla cambia la altura de la caja.
+  El centro de masa está 8 cm abajo del centro y la "espuma" arriba: el ROV se endereza solo.
+
+  Thrusters (plugin Thruster): cada uno escucha
+    /model/seafox_rov/joint/thruster_N_joint/cmd_thrust   (ignition.msgs.Double, Newtons)
+  El empuje positivo va en +X local de la hélice. Los índices N coinciden con
+  pwm_values[N] de pilot_pkg/control/c_twist_to_pwm.py:
+    0 = trasero-derecho   2 = delantero-izquierdo   3 = trasero-izquierdo   5 = delantero-derecho
+    1 = vertical izquierdo (empuje + hacia abajo)   4 = vertical derecho (empuje + hacia arriba)
+-->
+<sdf version="1.9">
+  <model name="seafox_rov">
+
+    <link name="base_link">
+      <inertial>
+        <pose>0 0 -0.08 0 0 0</pose>
+        <mass>11.0</mass>
+        <!-- Caja sólida 0.586 x 0.507 x 0.377 m -->
+        <inertia>
+          <ixx>0.366</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>0.445</iyy><iyz>0</iyz>
+          <izz>0.550</izz>
+        </inertia>
+      </inertial>
+
+      <visual name="visual">
+        <pose>-0.037 0 0.018 0 0 -1.5708</pose>
+        <geometry>
+          <mesh><uri>model://seafox_rov/meshes/seafox_rov.stl</uri></mesh>
+        </geometry>
+        <material>
+          <ambient>0.35 0.35 0.38 1</ambient>
+          <diffuse>0.55 0.55 0.6 1</diffuse>
+          <specular>0.4 0.4 0.4 1</specular>
+        </material>
+      </visual>
+
+      <!-- "Espuma" de flotación (define la mayor parte del volumen de flotabilidad) -->
+      <collision name="float_collision">
+        <pose>0 0 0.158 0 0 0</pose>
+        <geometry><box><size>0.46 0.42 0.06</size></box></geometry>
+      </collision>
+      <visual name="float_visual">
+        <pose>0 0 0.158 0 0 0</pose>
+        <geometry><box><size>0.46 0.42 0.06</size></box></geometry>
+        <transparency>0.6</transparency>
+        <material>
+          <ambient>1.0 0.85 0.1 1</ambient>
+          <diffuse>1.0 0.85 0.1 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Patas: puntos de apoyo sobre el fondo -->
+      <collision name="foot_fl"><pose> 0.25  0.21 -0.169 0 0 0</pose><geometry><sphere><radius>0.02</radius></sphere></geometry></collision>
+      <collision name="foot_fr"><pose> 0.25 -0.21 -0.169 0 0 0</pose><geometry><sphere><radius>0.02</radius></sphere></geometry></collision>
+      <collision name="foot_rl"><pose>-0.25  0.21 -0.169 0 0 0</pose><geometry><sphere><radius>0.02</radius></sphere></geometry></collision>
+      <collision name="foot_rr"><pose>-0.25 -0.21 -0.169 0 0 0</pose><geometry><sphere><radius>0.02</radius></sphere></geometry></collision>
+    </link>
+
+    <!-- ===================== Thrusters ===================== -->
+    <!-- Hélices: link pequeño + joint revolute sobre +X local. Sin colisión (no aportan
+         volumen). Inercia algo mayor que la real para que el PID de la hélice sea estable
+         con paso de 1 ms. -->
+
+    <!-- 0: trasero-derecho, horizontal -->
+    <link name="thruster_0">
+      <pose>-0.162 -0.150 -0.102 0 0 -0.7854</pose>
+      <inertial><mass>0.05</mass><inertia><ixx>0.001</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.001</iyy><iyz>0</iyz><izz>0.001</izz></inertia></inertial>
+    </link>
+    <joint name="thruster_0_joint" type="revolute">
+      <parent>base_link</parent><child>thruster_0</child>
+      <axis><xyz>1 0 0</xyz><limit><lower>-1e12</lower><upper>1e12</upper></limit></axis>
+    </joint>
+
+    <!-- 1: vertical izquierdo (empuje + hacia abajo, montado invertido) -->
+    <link name="thruster_1">
+      <pose>-0.007 0.105 -0.022 0 1.5708 0</pose>
+      <inertial><mass>0.05</mass><inertia><ixx>0.001</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.001</iyy><iyz>0</iyz><izz>0.001</izz></inertia></inertial>
+    </link>
+    <joint name="thruster_1_joint" type="revolute">
+      <parent>base_link</parent><child>thruster_1</child>
+      <axis><xyz>1 0 0</xyz><limit><lower>-1e12</lower><upper>1e12</upper></limit></axis>
+    </joint>
+
+    <!-- 2: delantero-izquierdo, horizontal -->
+    <link name="thruster_2">
+      <pose>0.168 0.145 0.098 0 0 2.3562</pose>
+      <inertial><mass>0.05</mass><inertia><ixx>0.001</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.001</iyy><iyz>0</iyz><izz>0.001</izz></inertia></inertial>
+    </link>
+    <joint name="thruster_2_joint" type="revolute">
+      <parent>base_link</parent><child>thruster_2</child>
+      <axis><xyz>1 0 0</xyz><limit><lower>-1e12</lower><upper>1e12</upper></limit></axis>
+    </joint>
+
+    <!-- 3: trasero-izquierdo, horizontal -->
+    <link name="thruster_3">
+      <pose>-0.162 0.150 -0.102 0 0 0.7854</pose>
+      <inertial><mass>0.05</mass><inertia><ixx>0.001</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.001</iyy><iyz>0</iyz><izz>0.001</izz></inertia></inertial>
+    </link>
+    <joint name="thruster_3_joint" type="revolute">
+      <parent>base_link</parent><child>thruster_3</child>
+      <axis><xyz>1 0 0</xyz><limit><lower>-1e12</lower><upper>1e12</upper></limit></axis>
+    </joint>
+
+    <!-- 4: vertical derecho (empuje + hacia arriba) -->
+    <link name="thruster_4">
+      <pose>-0.007 -0.105 -0.022 0 -1.5708 0</pose>
+      <inertial><mass>0.05</mass><inertia><ixx>0.001</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.001</iyy><iyz>0</iyz><izz>0.001</izz></inertia></inertial>
+    </link>
+    <joint name="thruster_4_joint" type="revolute">
+      <parent>base_link</parent><child>thruster_4</child>
+      <axis><xyz>1 0 0</xyz><limit><lower>-1e12</lower><upper>1e12</upper></limit></axis>
+    </joint>
+
+    <!-- 5: delantero-derecho, horizontal -->
+    <link name="thruster_5">
+      <pose>0.168 -0.145 0.098 0 0 -2.3562</pose>
+      <inertial><mass>0.05</mass><inertia><ixx>0.001</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.001</iyy><iyz>0</iyz><izz>0.001</izz></inertia></inertial>
+    </link>
+    <joint name="thruster_5_joint" type="revolute">
+      <parent>base_link</parent><child>thruster_5</child>
+      <axis><xyz>1 0 0</xyz><limit><lower>-1e12</lower><upper>1e12</upper></limit></axis>
+    </joint>
+
+    <!-- Plugins de thrusters (T200: diámetro 76 mm, ~36 N máx. a 12 V) -->
+    <plugin filename="ignition-gazebo-thruster-system" name="ignition::gazebo::systems::Thruster">
+      <namespace>seafox_rov</namespace><joint_name>thruster_0_joint</joint_name>
+      <thrust_coefficient>0.02</thrust_coefficient><fluid_density>1000</fluid_density>
+      <propeller_diameter>0.076</propeller_diameter><p_gain>0.01</p_gain>
+      <max_thrust_cmd>50</max_thrust_cmd><min_thrust_cmd>-50</min_thrust_cmd>
+    </plugin>
+    <plugin filename="ignition-gazebo-thruster-system" name="ignition::gazebo::systems::Thruster">
+      <namespace>seafox_rov</namespace><joint_name>thruster_1_joint</joint_name>
+      <thrust_coefficient>0.02</thrust_coefficient><fluid_density>1000</fluid_density>
+      <propeller_diameter>0.076</propeller_diameter><p_gain>0.01</p_gain>
+      <max_thrust_cmd>50</max_thrust_cmd><min_thrust_cmd>-50</min_thrust_cmd>
+    </plugin>
+    <plugin filename="ignition-gazebo-thruster-system" name="ignition::gazebo::systems::Thruster">
+      <namespace>seafox_rov</namespace><joint_name>thruster_2_joint</joint_name>
+      <thrust_coefficient>0.02</thrust_coefficient><fluid_density>1000</fluid_density>
+      <propeller_diameter>0.076</propeller_diameter><p_gain>0.01</p_gain>
+      <max_thrust_cmd>50</max_thrust_cmd><min_thrust_cmd>-50</min_thrust_cmd>
+    </plugin>
+    <plugin filename="ignition-gazebo-thruster-system" name="ignition::gazebo::systems::Thruster">
+      <namespace>seafox_rov</namespace><joint_name>thruster_3_joint</joint_name>
+      <thrust_coefficient>0.02</thrust_coefficient><fluid_density>1000</fluid_density>
+      <propeller_diameter>0.076</propeller_diameter><p_gain>0.01</p_gain>
+      <max_thrust_cmd>50</max_thrust_cmd><min_thrust_cmd>-50</min_thrust_cmd>
+    </plugin>
+    <plugin filename="ignition-gazebo-thruster-system" name="ignition::gazebo::systems::Thruster">
+      <namespace>seafox_rov</namespace><joint_name>thruster_4_joint</joint_name>
+      <thrust_coefficient>0.02</thrust_coefficient><fluid_density>1000</fluid_density>
+      <propeller_diameter>0.076</propeller_diameter><p_gain>0.01</p_gain>
+      <max_thrust_cmd>50</max_thrust_cmd><min_thrust_cmd>-50</min_thrust_cmd>
+    </plugin>
+    <plugin filename="ignition-gazebo-thruster-system" name="ignition::gazebo::systems::Thruster">
+      <namespace>seafox_rov</namespace><joint_name>thruster_5_joint</joint_name>
+      <thrust_coefficient>0.02</thrust_coefficient><fluid_density>1000</fluid_density>
+      <propeller_diameter>0.076</propeller_diameter><p_gain>0.01</p_gain>
+      <max_thrust_cmd>50</max_thrust_cmd><min_thrust_cmd>-50</min_thrust_cmd>
+    </plugin>
+
+    <!-- ===== Hidrodinámica (Fossen) =====
+         Cuadráticos ≈ -0.5 * rho * Cd * A_efectiva. El frame es abierto, así que se usa un
+         área efectiva menor que la del bounding box. Masa añadida en 0 (inestable en Fortress). -->
+    <plugin filename="ignition-gazebo-hydrodynamics-system"
+            name="ignition::gazebo::systems::Hydrodynamics">
+      <link_name>base_link</link_name>
+      <xDotU>0</xDotU>
+      <yDotV>0</yDotV>
+      <zDotW>0</zDotW>
+      <kDotP>0</kDotP>
+      <mDotQ>0</mDotQ>
+      <nDotR>0</nDotR>
+      <xUabsU>-50</xUabsU>
+      <xU>-10</xU>
+      <yVabsV>-60</yVabsV>
+      <yV>-12</yV>
+      <zWabsW>-75</zWabsW>
+      <zW>-15</zW>
+      <kPabsP>-2</kPabsP>
+      <kP>-1</kP>
+      <mQabsQ>-2</mQabsQ>
+      <mQ>-1</mQ>
+      <nRabsR>-2</nRabsR>
+      <nR>-1</nR>
+    </plugin>
+
+  </model>
+</sdf>

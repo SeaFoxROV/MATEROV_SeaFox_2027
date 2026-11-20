@@ -28,9 +28,7 @@
       <render_engine>ogre2</render_engine>
     </plugin>
 
-    <!-- ===== Física del agua: flotabilidad =====
-         Si tu versión de Fortress no reconoce <graded_buoyancy>, sustitúyelo por:
-           <uniform_fluid_density>1000</uniform_fluid_density>
+    <!-- ===== Física del agua: flotabilidad =====  -->
          (en ese caso todo el mundo se trata como agua, incluso por encima de z = 0). -->
     <plugin filename="ignition-gazebo-buoyancy-system"
             name="ignition::gazebo::systems::Buoyancy">
@@ -77,6 +75,13 @@
       <uri>model://test_ball_heavy</uri>
       <name>test_ball_heavy</name>
       <pose>1 0 -0.5 0 0 0</pose>
+    </include>
+
+    <!-- ROV SeaFox. El nombre 'seafox_rov' define los topics de los thrusters. -->
+    <include>
+      <uri>model://seafox_rov</uri>
+      <name>seafox_rov</name>
+      <pose>-2 0 -1 0 0 0</pose>
     </include>
 
   </world>
