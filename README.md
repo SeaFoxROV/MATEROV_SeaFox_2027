@@ -65,11 +65,36 @@ ros2 topic echo <topico>
 
 ## Simulación
 
-### Abrir Gazebo
-Dentro del contenedor de simulación (`scripts/run_sim.sh`), abre el mundo de la piscina (Gazebo Fortress).
+La simulación usa dos contenedores que se comunican por ROS 2 (ambos con `--network host`):
+el de simulación (Gazebo + bridge) y el del piloto (joystick -> PWM -> empuje).
+
+### 1. Abrir la piscina con el ROV (contenedor de simulación)
+Desde la carpeta `scripts/`, inicia el contenedor de simulación:
+
+```bash
+./run_sim.sh
+```
 
 ```bash
 ~/ros2_ws/launch_pool.sh
+```
+
+### 2. Mandar comandos de movimiento desde ROS 2 (contenedor del piloto)
+En otra terminal, desde la carpeta `scripts/`, inicia el contenedor del piloto:
+
+```bash
+./run_pilot.sh
+```
+
+
+```bash
+cd ~/ros2_ws
+cb
+ros2 launch pilot_pkg sim.launch.py
+```
+
+```bash
+ros2 topic echo /model/seafox_rov/joint/thruster_0_joint/cmd_thrust
 ```
 
 ## Cámaras
