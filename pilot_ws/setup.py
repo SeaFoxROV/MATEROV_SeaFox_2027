@@ -31,6 +31,7 @@ setup(
             "twist_to_pwm = pilot_pkg.control.c_twist_to_pwm:main",
             "udp_publisher = pilot_pkg.communication.udp_publisher:main",
             "pwm_to_udp = pilot_pkg.control.d_pwm_to_udp:main",
+            "pwm_to_gz_thrust = pilot_pkg.sim.pwm_to_gz_thrust:main",
         ],
     },
 )

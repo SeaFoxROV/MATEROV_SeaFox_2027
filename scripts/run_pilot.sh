@@ -13,4 +13,5 @@ sudo docker run -it --name seafox_pilot_container \
   --device-cgroup-rule='c 13:* rmw' \
   --group-add "$(getent group input | cut -d: -f3)" \
   --network host \
+  --ipc host \
   seafox-pilot
